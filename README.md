@@ -1,9 +1,9 @@
 # Dashdot Cursors
 
-[![build](https://img.shields.io/github/workflow/status/wappla/cursors/Build?style=flat&colorA=000000&colorB=000000)](https://github.com/wappla/router/actions/workflows/on_push_main.yml)
+[![build](https://img.shields.io/github/workflow/status/wappla/cursors/Build?style=flat&colorA=000000&colorB=000000)](https://github.com/wappla/cursors/actions/workflows/on_push_main.yml)
 [![codecov](https://img.shields.io/codecov/c/github/wappla/cursors?style=flat&colorA=000000&colorB=000000)](https://codecov.io/gh/wappla/cursors)
 
-A simple and functional Node router with some helpers.
+An simple SQL and Mongo implementation of cursor based pagination
 
 ## Usage
 
