@@ -1,6 +1,6 @@
 {
   "name": "@dashdot/cursors",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A simple SQL and Mongo implementation of cursor based pagination",
   "license": "MIT",
   "files": [
