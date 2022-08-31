@@ -30,7 +30,6 @@
     "@dashdot/factory": "^0.1.4",
     "@faker-js/faker": "^6.0.0-alpha.5",
     "benchmark": "^2.1.4",
-    "codecov": "^3.8.3",
     "dotenv": "^16.0.0",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^14.2.1",
