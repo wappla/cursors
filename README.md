@@ -3,7 +3,7 @@
 [![build](https://img.shields.io/github/workflow/status/wappla/cursors/Build?style=flat&colorA=000000&colorB=000000)](https://github.com/wappla/cursors/actions/workflows/on_push_main.yml)
 [![codecov](https://img.shields.io/codecov/c/github/wappla/cursors?style=flat&colorA=000000&colorB=000000)](https://codecov.io/gh/wappla/cursors)
 
-An simple SQL and Mongo implementation of cursor based pagination
+A simple SQL and Mongo implementation of cursor based pagination
 
 ## Usage
 
@@ -26,6 +26,12 @@ import { cursorToSqlQuery } from '@dashdot/cursor'
 import * as tables from './tables'
 
 const user = await tables.users().fist()
+const orderBy = {
+    email: 'ASC'
+    lastName: 'DESC',
+    firstName: 'ASC',
+    id: 'DESC',
+}
 const cursor = createCursor(user, orderBy)
 const [
     whereQuery,
