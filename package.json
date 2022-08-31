@@ -1,0 +1,49 @@
+{
+  "name": "@dashdot/cursors",
+  "version": "0.1.0",
+  "description": "Cursor based pagination helpers",
+  "license": "MIT",
+  "files": [
+    "dist/"
+  ],
+  "main": "./dist/cjs/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "benchmark": "node -r esm benchmark.js",
+    "codecov": "codecov",
+    "build": "rm -rf dist/* && tsc -p tsconfig-esm.json && tsc -p tsconfig-cjs.json && ./fixup",
+    "prepare": "npm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@babel/plugin-transform-runtime": "^7.16.10",
+    "@babel/preset-env": "^7.16.11",
+    "@dashdot/eslint-config-base": "^0.3.0",
+    "@dashdot/factory": "^0.1.4",
+    "@faker-js/faker": "^6.0.0-alpha.5",
+    "benchmark": "^2.1.4",
+    "codecov": "^3.8.3",
+    "dotenv": "^16.0.0",
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-jest": "^26.0.0",
+    "esm": "^3.2.25",
+    "jest": "^27.4.7",
+    "knex": "^1.0.2",
+    "pg": "^8.7.3",
+    "thenby": "^1.3.4",
+    "typescript": "^4.5.5"
+  },
+  "eslintConfig": {
+    "extends": "@dashdot/eslint-config-base"
+  }
+}
