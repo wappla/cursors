@@ -74,7 +74,7 @@ test('if simple ascending order by finds the correct users.', async () => {
     let nextUser = sortedUsers[0]
     for (let i = 1; i <= TOTAL_USERS; i += 1) {
         const cursor = createCursor(nextUser, orderBy)
-        const [query, bindings, orderQuery] = cursorToSqlQuery(cursor)
+        const [query, bindings, orderQuery] = cursorToSqlQuery(cursor, orderBy)
         const knexQuery = query.replace(/\$\w+/g, '?')
         nextUser = await users()
             .whereRaw(knexQuery, bindings)
@@ -96,7 +96,7 @@ test('if simple descending order by finds the correct users.', async () => {
     let nextUser = sortedUsers[0]
     for (let i = 1; i <= TOTAL_USERS; i += 1) {
         const cursor = createCursor(nextUser, orderBy)
-        const [query, bindings, orderQuery] = cursorToSqlQuery(cursor)
+        const [query, bindings, orderQuery] = cursorToSqlQuery(cursor, orderBy)
         const knexQuery = query.replace(/\$\w+/g, '?')
         nextUser = await users()
             .whereRaw(knexQuery, bindings)
@@ -124,7 +124,7 @@ test('if advanced order by finds the correct users.', async () => {
     let nextUser = sortedUsers[0]
     for (let i = 1; i <= TOTAL_USERS; i += 1) {
         const cursor = createCursor(nextUser, orderBy)
-        const [query, bindings, orderQuery] = cursorToSqlQuery(cursor)
+        const [query, bindings, orderQuery] = cursorToSqlQuery(cursor, orderBy)
         const knexQuery = query.replace(/\$\w+/g, '?')
         nextUser = await users()
             .whereRaw(knexQuery, bindings)
@@ -133,6 +133,29 @@ test('if advanced order by finds the correct users.', async () => {
         if (i < TOTAL_USERS) {
             expect(nextUser).toBeDefined()
             expect(nextUser.id).toEqual(sortedUsers[i].id)
+        }
+    }
+})
+
+test('if no cursor sorts users correctly.', async () => {
+    const allUsers = await users().where({})
+    const sortedUsers = allUsers.sort(by('id', 'desc'))
+    const orderBy = {
+        id: DESC,
+    }
+    let nextUser = sortedUsers[0]
+    let cursor = null
+    for (let i = 0; i <= TOTAL_USERS; i += 1) {
+        const [query, bindings, orderQuery] = cursorToSqlQuery(cursor, orderBy)
+        const knexQuery = query.replace(/\$\w+/g, '?')
+        nextUser = await users()
+            .whereRaw(knexQuery, bindings)
+            .orderByRaw(orderQuery)
+            .first()
+        if (i < TOTAL_USERS) {
+            expect(nextUser).toBeDefined()
+            expect(nextUser.id).toEqual(sortedUsers[i].id)
+            cursor = createCursor(nextUser, orderBy)
         }
     }
 })

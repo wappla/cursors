@@ -34,7 +34,25 @@ export const cursorToObject = (cursor) => {
     return JSON.parse(cursorString)
 }
 
-export const cursorToSqlQuery = (cursor) => {
+export const cursorToSqlQuery = (cursor, order) => {
+    if (!cursor) {
+        return Object.keys(order).reduce((acc, column, index, array) => {
+            const orderQuery = acc[2] || ''
+            const direction = order[column]
+            const newOrder = `${orderQuery}"${column}" ${direction}`
+            let orderPostfix = ', '
+            const isLast = index === array.length - 1
+            if (isLast) {
+                orderPostfix = ''
+            }
+            const finalOrder = `${newOrder}${orderPostfix}`
+            return [
+                '',
+                [],
+                finalOrder,
+            ]
+        }, [])
+    }
     const cursorObject = cursorToObject(cursor)
     return Object.keys(cursorObject).reverse().reduce((acc, column, index, array) => {
         const [value, direction] = cursorObject[column]
@@ -52,12 +70,12 @@ export const cursorToSqlQuery = (cursor) => {
         const orderIndex = array.length - index - 1
         const orderColumn = array[orderIndex]
         const orderDirection = cursorObject[orderColumn][1]
-        const order = `${orderQuery}"${orderColumn}" ${orderDirection}`
+        const newOrder = `${orderQuery}"${orderColumn}" ${orderDirection}`
         let orderPostfix = ', '
         if (isLast) {
             orderPostfix = ''
         }
-        const finalOrder = `${order}${orderPostfix}`
+        const finalOrder = `${newOrder}${orderPostfix}`
         if (isFirst) {
             return [
                 `"${column}" ${directionFirst} $${binding - 1}`,

@@ -37,7 +37,7 @@ const [
     whereQuery,
     whereValues,
     orderQuery
-]  = cursorToSqlQuery(cursor)
+]  = cursorToSqlQuery(cursor, orderBy)
 const nextUser = await tables.users()
     .whereRaw(whereQuery, whereValues)
     .orderByRaw(orderQuery)
