@@ -1,3 +1,6 @@
+import { Types } from 'mongoose'
+
+const { ObjectId } = Types
 export const DESC = 'DESC'
 export const ASC = 'ASC'
 
@@ -91,34 +94,46 @@ export const cursorToSqlQuery = (cursor, order) => {
     }, [])
 }
 
-export const cursorToMongoQuery = (cursor) => {
-    const cursorObject = cursorToObject(cursor)
-    return Object.keys(cursorObject).reverse().reduce((query, column, index) => {
-        const [value, direction] = cursorObject[column]
-        const directionIsAsc = direction === ASC
-        const directionFirst = directionIsAsc ? '$gt' : '$lt'
-        const directionOne = directionIsAsc ? '$gte' : '$lte'
-        const directionTwo = directionIsAsc ? '$gt' : '$lt'
-        const isFirst = index === 0
-        if (isFirst) {
-            return {
-                [column]: {
-                    [directionFirst]: value,
-                },
-            }
-        }
-        return {
-            $and: [{
-                [column]: {
-                    [directionOne]: value,
-                },
-            }, {
-                $or: [{
+export const cursorToMongoQuery = (cursor, order) => {
+    let query = {}
+    if (cursor) {
+        const cursorObject = cursorToObject(cursor)
+        query = Object.keys(cursorObject).reverse().reduce((acc, column, index) => {
+            const [value, direction] = cursorObject[column]
+            const directionIsAsc = direction === ASC
+            const directionFirst = directionIsAsc ? '$gt' : '$lt'
+            const directionOne = directionIsAsc ? '$gte' : '$lte'
+            const directionTwo = directionIsAsc ? '$gt' : '$lt'
+            const isFirst = index === 0
+            if (isFirst) {
+                return {
                     [column]: {
-                        [directionTwo]: value,
+                        [directionFirst]: value,
                     },
-                }, query]
-            }]
-        }
-    }, {})
+                }
+            }
+            return {
+                $and: [{
+                    [column]: {
+                        [directionOne]: value,
+                    },
+                }, {
+                    $or: [{
+                        [column]: {
+                            [directionTwo]: value,
+                        },
+                    }, acc]
+                }]
+            }
+        }, {})
+    }
+    const orderQuery = Object.keys(order)
+        .reduce((acc, column) => {
+            const key = column === 'id' ? '_id' : column
+            return {
+                ...acc,
+                [key]: order[column] === ASC ? 1 : -1
+            }
+        }, {})
+    return [query, orderQuery]
 }

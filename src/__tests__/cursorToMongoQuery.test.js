@@ -18,11 +18,11 @@ test('if \'cursorToMongoQuery\' return correct values.', async () => {
         _id: DESC,
     }
     const cursor = createCursor(user, orderBy)
-    const query = cursorToMongoQuery(cursor)
+    const query = cursorToMongoQuery(cursor, orderBy)
     const expectedResult = {
         _id: { $lt: _id }
     }
-    expect(query).toEqual(expectedResult)
+    expect(query[0]).toEqual(expectedResult)
 })
 
 test('if \'cursorToMongoQuery\' return correct values.', async () => {
@@ -40,7 +40,7 @@ test('if \'cursorToMongoQuery\' return correct values.', async () => {
         _id: DESC,
     }
     const cursor = createCursor(user, orderBy)
-    const query = cursorToMongoQuery(cursor)
+    const query = cursorToMongoQuery(cursor, orderBy)
     const expectedResult = {
         $and: [
             { firstName: { $gte: firstName } },
@@ -64,7 +64,7 @@ test('if \'cursorToMongoQuery\' return correct values.', async () => {
             }
         ]
     }
-    expect(query).toEqual(expectedResult)
+    expect(query[0]).toEqual(expectedResult)
 })
 
 test('if \'cursorToMongoQuery\' return correct values.', async () => {
@@ -85,7 +85,7 @@ test('if \'cursorToMongoQuery\' return correct values.', async () => {
         _id: DESC,
     }
     const cursor = createCursor(user, orderBy)
-    const query = cursorToMongoQuery(cursor)
+    const query = cursorToMongoQuery(cursor, orderBy)
     const expectedResult = {
         $and: [
             { email: { $gte: email } },
@@ -119,5 +119,5 @@ test('if \'cursorToMongoQuery\' return correct values.', async () => {
             }
         ]
     }
-    expect(query).toEqual(expectedResult)
+    expect(query[0]).toEqual(expectedResult)
 })

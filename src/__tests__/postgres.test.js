@@ -12,7 +12,7 @@ import {
     destroyTestDatabase,
     KnexFactory,
     getKnexConnection
-} from '../testing'
+} from '../testingPostgres'
 
 const TABLE_USERS = 'users'
 const TOTAL_USERS = 10

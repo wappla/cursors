@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable import/prefer-default-export */
 import { Client as PostgresClient } from 'pg'
