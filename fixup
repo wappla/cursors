@@ -14,6 +14,3 @@ cat >dist/esm/package.json <<!EOF
     "type": "module"
 }
 !EOF
-
-find src -name '*.d.ts' -exec cp {} dist/mjs \;
-find src -name '*.d.ts' -exec cp {} dist/cjs \;

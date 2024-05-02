@@ -1,3 +1,4 @@
+import { Knex } from 'knex'
 import {
     createTestDatabase,
     destroyTestDatabase,
@@ -6,7 +7,7 @@ import UserFactory, { TABLE_USERS } from 'factories/UserFactory'
 
 const TOTAL_USERS = 2000
 
-export const createBenchmarkDatabase = async (databaseName) => {
+export const createBenchmarkDatabase = async (databaseName: string) => {
     const knex = await createTestDatabase(databaseName)
     if (knex) {
         const now = knex.fn.now()
@@ -23,6 +24,6 @@ export const createBenchmarkDatabase = async (databaseName) => {
     }
 }
 
-export const destroyBenchmarkDatabase = async (knex) => {
+export const destroyBenchmarkDatabase = async (knex: Knex) => {
     await destroyTestDatabase(knex)
 }

@@ -1,4 +1,4 @@
-import { ClientConfig, Client as PostgresClient } from 'pg'
+import pg from 'pg'
 import createKnexConnection, { Knex } from 'knex'
 import Factory from '@dashdot/factory'
 
@@ -12,7 +12,7 @@ export abstract class KnexFactory extends Factory {
     }
 }
 
-export async function runRawQuery(query, useRoot = true) {
+export async function runRawQuery(query: string, useRoot = true) {
     const {
         POSTGRES_HOST,
         POSTGRES_PORT,
@@ -27,11 +27,11 @@ export async function runRawQuery(query, useRoot = true) {
         password: POSTGRES_PASSWORD,
         database: 'postgres',
         ssl: false
-    } as ClientConfig
+    } as pg.ClientConfig
     if (!useRoot) {
         config.database = POSTGRES_DATABASE
     }
-    const client = new PostgresClient(config)
+    const client = new pg.Client(config)
     await client.connect()
     const result = await client.query(query)
     await client.end()
@@ -96,6 +96,7 @@ export async function destroyTestDatabase(knex: Knex | null = null) {
         await knex.destroy()
         const destroyDatabaseQuery = `DROP DATABASE IF EXISTS "${databaseName}";`
         await runRawQuery(destroyDatabaseQuery)
+        console.log(`Database "${databaseName}" destroyed.`)
     } catch (error) {
         console.error(error)
     }

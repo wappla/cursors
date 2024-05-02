@@ -1,5 +1,5 @@
+import by from 'thenby'
 import { Knex } from 'knex'
-import { firstBy } from 'thenby'
 import {
     ASC, DESC, createCursor, cursorToSqlQuery
 } from '../index'
@@ -10,11 +10,14 @@ import {
 } from '../testing'
 import UserFactory from '../factories/UserFactory'
 import { TABLE_TASKS, TASK_STATUS_COMPLETED, TASK_STATUS_PENDING, tasks } from '../factories/TaskFactory'
+import faker from '@faker-js/faker'
 
 const TABLE_USERS = 'users'
 const TOTAL_USERS = 2
 const TASKS_PER_USER = 2
-const DATABASE_NAME = 'testing-postgres'
+
+// We use a random word so when the tests run in parallel they don't collide.
+const DATABASE_NAME = faker.random.word()
 
 const users = () => {
     const knex = getKnexConnection(DATABASE_NAME)
@@ -61,7 +64,7 @@ afterAll(async () => {
 
 test('if simple ascending order by finds the correct users.', async () => {
     const allUsers = await users().where({})
-    const sortedUsers = allUsers.sort(firstBy('id', 'asc'))
+    const sortedUsers = allUsers.sort(by.firstBy('id', 'asc'))
     const orderBy = {
         id: ASC,
     }
@@ -83,7 +86,7 @@ test('if simple ascending order by finds the correct users.', async () => {
 
 test('if simple descending order by finds the correct users.', async () => {
     const allUsers = await users().where({})
-    const sortedUsers = allUsers.sort(firstBy('id', 'desc'))
+    const sortedUsers = allUsers.sort(by.firstBy('id', 'desc'))
     const orderBy = {
         id: DESC,
     }
@@ -106,7 +109,7 @@ test('if simple descending order by finds the correct users.', async () => {
 test('if advanced order by finds the correct users.', async () => {
     const allUsers = await users().where({})
     const sortedUsers = allUsers.sort(
-        firstBy('lastName', 'desc').thenBy('firstName', 'asc').thenBy('id', 'desc')
+        by.firstBy('lastName', 'desc').thenBy('firstName', 'asc').thenBy('id', 'desc')
     )
     const orderBy = {
         lastName: DESC,
@@ -131,7 +134,7 @@ test('if advanced order by finds the correct users.', async () => {
 
 test('if no cursor sorts users correctly.', async () => {
     const allUsers = await users().where({})
-    const sortedUsers = allUsers.sort(firstBy('id', 'desc'))
+    const sortedUsers = allUsers.sort(by.firstBy('id', 'desc'))
     const orderBy = {
         id: DESC,
     }
@@ -161,7 +164,7 @@ test('If joined table is sorted correctly', async () => {
             `${TABLE_USERS}.id as userId`,
         )
         .leftJoin(TABLE_USERS, `${TABLE_TASKS}.userId`, `${TABLE_USERS}.id`)
-    const sortedTasks = allTasks.sort(firstBy('createdAt', 'asc').thenBy('userId', 'asc'))
+    const sortedTasks = allTasks.sort(by.firstBy('createdAt', 'asc').thenBy('userId', 'asc'))
     
     const TOTAL_USER_TASKS = TOTAL_USERS * TASKS_PER_USER
     expect(sortedTasks.length).toEqual(TOTAL_USER_TASKS)
