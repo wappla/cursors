@@ -1,24 +1,14 @@
-/* eslint-disable no-await-in-loop */
-/* eslint-disable import/prefer-default-export */
-import { Client as PostgresClient } from 'pg'
-import createKnexConnection from 'knex'
+import { ClientConfig, Client as PostgresClient } from 'pg'
+import createKnexConnection, { Knex } from 'knex'
 import Factory from '@dashdot/factory'
 
-export class KnexFactory extends Factory {
-    static async persist(records) {
-        const results = []
-        const batchSize = 1000
-        let indexed = 0
-        while (indexed < records.length) {
-            const batch = records.slice(indexed, indexed + batchSize)
-            if (batch.length > 0) {
-                // eslint-disable-next-line no-await-in-loop
-                const batchResult = await this.table().insert(batch).returning('*')
-                results.push(batchResult)
-            }
-            indexed += batchSize
-        }
-        return results
+export abstract class KnexFactory extends Factory {
+    static async persist(records: any) {
+        return this.table().insert(records).returning('*')
+    }
+
+    static get table(): () => Knex.QueryBuilder {
+        throw new Error('Method not implemented.')
     }
 }
 
@@ -37,7 +27,7 @@ export async function runRawQuery(query, useRoot = true) {
         password: POSTGRES_PASSWORD,
         database: 'postgres',
         ssl: false
-    }
+    } as ClientConfig
     if (!useRoot) {
         config.database = POSTGRES_DATABASE
     }
@@ -48,7 +38,7 @@ export async function runRawQuery(query, useRoot = true) {
     return result
 }
 
-export function createKnexConfig(database) {
+export function createKnexConfig(databaseName?: string): Knex.Config {
     const {
         POSTGRES_HOST,
         POSTGRES_PORT,
@@ -56,13 +46,14 @@ export function createKnexConfig(database) {
         POSTGRES_PASSWORD,
         POSTGRES_DATABASE,
     } = process.env
+    const port = POSTGRES_PORT as string
     return {
         client: 'postgres',
         connection: {
             timezone: 'UTC',
             host: POSTGRES_HOST,
-            port: POSTGRES_PORT,
-            database: database || POSTGRES_DATABASE,
+            port: parseInt(port),
+            database: databaseName || POSTGRES_DATABASE,
             user: POSTGRES_USERNAME,
             password: POSTGRES_PASSWORD,
             dateStrings: true,
@@ -76,8 +67,8 @@ export function createKnexConfig(database) {
     }
 }
 
-let cache = null
-export function getKnexConnection(databaseName) {
+let cache = null as Knex | null
+export function getKnexConnection(databaseName?: string) {
     if (cache === null) {
         const config = createKnexConfig(databaseName)
         cache = createKnexConnection(config)
@@ -85,26 +76,25 @@ export function getKnexConnection(databaseName) {
     return cache
 }
 
-export async function createTestDatabase(name) {
+export async function createTestDatabase(name: string) {
     try {
         await runRawQuery(`DROP DATABASE IF EXISTS "${name}";`)
         await runRawQuery(`CREATE DATABASE "${name}";`)
-        const knex = getKnexConnection(name)
-        knex.DB_NAME = name
-        return knex
+        return getKnexConnection(name)
     } catch (error) {
         console.error(error)
         return null
     }
 }
 
-export async function destroyTestDatabase(knex = null) {
+export async function destroyTestDatabase(knex: Knex | null = null) {
     if (knex === null) {
         return
     }
     try {
+        const databaseName = knex.client.config.connection.database
         await knex.destroy()
-        const destroyDatabaseQuery = `DROP DATABASE IF EXISTS "${knex.DB_NAME}";`
+        const destroyDatabaseQuery = `DROP DATABASE IF EXISTS "${databaseName}";`
         await runRawQuery(destroyDatabaseQuery)
     } catch (error) {
         console.error(error)

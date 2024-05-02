@@ -7,6 +7,7 @@
         "esModuleInterop": true,
         "inlineSourceMap": false,
         "lib": ["esnext"],
+        "target": "ESNext",
         "listEmittedFiles": false,
         "listFiles": false,
         "moduleResolution": "node",
@@ -15,7 +16,8 @@
         "resolveJsonModule": true,
         "rootDir": "src",
         "skipLibCheck": true,
-        "strict": true,
+        "strict": false,
+        "strictNullChecks": true,
         "traceResolution": false,
         "types": ["node", "jest"]
     },
@@ -23,7 +25,10 @@
     "exclude": [
         "node_modules",
         "dist",
-        "src/__tests__"
     ],
-    "include": ["src"]
+    "include": ["src"],
+    "ts-node": {
+        "esm": true,
+        "swc": true
+    }
 }
