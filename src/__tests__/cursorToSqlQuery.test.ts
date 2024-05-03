@@ -90,3 +90,19 @@ test('if \'cursorToSqlQuery\' return correct values when no cursor is provided.'
     ]
     expect(query).toEqual(expectedResult)
 })
+
+test('if \'cursorToSqlQuery\' return correct values using joined column.', async () => {
+    const taskId = 1
+    const userId = 5
+    const taskName = 'task'
+    const joinedTaskUser = { taskId, userId, 'tasks.name': taskName }
+    const orderBy = { 'tasks.name': ASC}
+    const cursor = createCursor(joinedTaskUser, orderBy)
+    const query = cursorToSqlQuery(cursor, orderBy)
+    const expectedResult = [
+        '"tasks.name" > $1',
+        [taskName],
+        '"tasks.name" ASC',
+    ]
+    expect(query).toEqual(expectedResult)
+})

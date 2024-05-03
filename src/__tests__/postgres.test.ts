@@ -1,43 +1,30 @@
-/* eslint-disable no-await-in-loop */
-import by from 'thenby'
-import faker from '@faker-js/faker'
+import by from 'thenby'
+import { Knex } from 'knex'
 import {
-    ASC,
-    DESC,
-    createCursor,
-    cursorToSqlQuery,
+    ASC, DESC, createCursor, cursorToSqlQuery
 } from '../index'
 import {
     createTestDatabase,
     destroyTestDatabase,
-    KnexFactory,
-    getKnexConnection
+    getKnexConnection,
 } from '../testing'
+import UserFactory from '../factories/UserFactory'
+import { TABLE_TASKS, TASK_STATUS_COMPLETED, TASK_STATUS_PENDING, tasks } from '../factories/TaskFactory'
+import faker from '@faker-js/faker'
 
 const TABLE_USERS = 'users'
-const TOTAL_USERS = 10
-const DATABASE_NAME = 'testing-postgres'
+const TOTAL_USERS = 2
+const TASKS_PER_USER = 2
+
+// We use a random word so when the tests run in parallel they don't collide.
+const DATABASE_NAME = faker.random.word()
 
 const users = () => {
-    const knex = getKnexConnection()
+    const knex = getKnexConnection(DATABASE_NAME)
     return knex(TABLE_USERS)
 }
 
-class UserFactory extends KnexFactory {
-    static get table() {
-        return users
-    }
-
-    static async make() {
-        return {
-            firstName: faker.name.firstName(),
-            lastName: faker.name.lastName(),
-            email: faker.unique(faker.internet.email),
-        }
-    }
-}
-
-const createSchema = async (knex) => {
+const createSchema = async (knex: Knex | null) => {
     if (knex == null) {
         return
     }
@@ -49,16 +36,26 @@ const createSchema = async (knex) => {
         table.string('email').notNullable()
         table.string('firstName')
         table.string('lastName')
-        table.unique('email')
+        table.unique(['email'])
+    })
+    await knex.schema.createTable(TABLE_TASKS, (table) => {
+        table.increments().primary()
+        table.datetime('createdAt').defaultTo(now)
+        table.datetime('updatedAt').defaultTo(now)
+        table.string('name').notNullable()
+        table.enum('status', [TASK_STATUS_PENDING, TASK_STATUS_COMPLETED])
+        table.integer('userId').unsigned().notNullable()
+        table.foreign('userId').references(`${TABLE_USERS}.id`)
     })
 }
 
-let knex = null
+let knex = null as Knex | null
 
 beforeAll(async () => {
     knex = await createTestDatabase(DATABASE_NAME)
     await createSchema(knex)
-    await UserFactory.create(TOTAL_USERS)
+    const users = await UserFactory.create(TOTAL_USERS)
+    await Promise.all(users.map(async (user) => await user.createTasks(TASKS_PER_USER)))
 })
 
 afterAll(async () => {
@@ -67,7 +64,7 @@ afterAll(async () => {
 
 test('if simple ascending order by finds the correct users.', async () => {
     const allUsers = await users().where({})
-    const sortedUsers = allUsers.sort(by('id', 'asc'))
+    const sortedUsers = allUsers.sort(by.firstBy('id', 'asc'))
     const orderBy = {
         id: ASC,
     }
@@ -89,7 +86,7 @@ test('if simple ascending order by finds the correct users.', async () => {
 
 test('if simple descending order by finds the correct users.', async () => {
     const allUsers = await users().where({})
-    const sortedUsers = allUsers.sort(by('id', 'desc'))
+    const sortedUsers = allUsers.sort(by.firstBy('id', 'desc'))
     const orderBy = {
         id: DESC,
     }
@@ -112,9 +109,7 @@ test('if simple descending order by finds the correct users.', async () => {
 test('if advanced order by finds the correct users.', async () => {
     const allUsers = await users().where({})
     const sortedUsers = allUsers.sort(
-        by('lastName', 'desc')
-            .thenBy('firstName', 'asc')
-            .thenBy('id', 'desc')
+        by.firstBy('lastName', 'desc').thenBy('firstName', 'asc').thenBy('id', 'desc')
     )
     const orderBy = {
         lastName: DESC,
@@ -139,12 +134,12 @@ test('if advanced order by finds the correct users.', async () => {
 
 test('if no cursor sorts users correctly.', async () => {
     const allUsers = await users().where({})
-    const sortedUsers = allUsers.sort(by('id', 'desc'))
+    const sortedUsers = allUsers.sort(by.firstBy('id', 'desc'))
     const orderBy = {
         id: DESC,
     }
     let nextUser = sortedUsers[0]
-    let cursor = null
+    let cursor: string | null = null
     for (let i = 0; i <= TOTAL_USERS; i += 1) {
         const [query, bindings, orderQuery] = cursorToSqlQuery(cursor, orderBy)
         const knexQuery = query.replace(/\$\w+/g, '?')
@@ -156,6 +151,57 @@ test('if no cursor sorts users correctly.', async () => {
             expect(nextUser).toBeDefined()
             expect(nextUser.id).toEqual(sortedUsers[i].id)
             cursor = createCursor(nextUser, orderBy)
+        }
+    }
+})
+
+test('If joined table is sorted correctly', async () => {
+    const allTasks = await tasks(DATABASE_NAME)
+        .select(
+            `${TABLE_TASKS}.id as taskId`,
+            `${TABLE_TASKS}.createdAt`,
+            `${TABLE_TASKS}.name`,
+            `${TABLE_USERS}.id as userId`,
+        )
+        .leftJoin(TABLE_USERS, `${TABLE_TASKS}.userId`, `${TABLE_USERS}.id`)
+    const sortedTasks = allTasks.sort(by.firstBy('createdAt', 'asc').thenBy('userId', 'asc'))
+    
+    const TOTAL_USER_TASKS = TOTAL_USERS * TASKS_PER_USER
+    expect(sortedTasks.length).toEqual(TOTAL_USER_TASKS)
+
+    const orderBy = {
+        createdAt: {
+            direction: ASC,
+            column: `${TABLE_TASKS}"."createdAt`,
+        },
+        userId: {
+            direction: ASC,
+            column: `${TABLE_USERS}"."id`,
+        },
+    }
+
+    let cursor: string | null = null
+    let nextTask = sortedTasks[0]
+    for (let i = 0; i <= TOTAL_USER_TASKS; i += 1) {
+        const [whereQuery, whereValues, orderQuery] = cursorToSqlQuery(cursor, orderBy)
+        const knexQuery = whereQuery.replace(/\$\w+/g, '?')
+        nextTask = await tasks()
+            .select(
+                `${TABLE_TASKS}.id as taskId`,
+                `${TABLE_TASKS}.createdAt`,
+                `${TABLE_TASKS}.name`,
+                `${TABLE_USERS}.id as userId`,
+            )
+            .leftJoin(TABLE_USERS, `${TABLE_TASKS}.userId`, `${TABLE_USERS}.id`)
+            .whereRaw(knexQuery, whereValues)
+            .orderByRaw(orderQuery)
+            .first()
+        if (i < TOTAL_USER_TASKS) {
+            expect(nextTask).toBeDefined()
+            expect(nextTask.name).toEqual(sortedTasks[i].name)
+            expect(nextTask.taskId).toEqual(sortedTasks[i].taskId)
+            expect(nextTask.createdAt).toEqual(sortedTasks[i].createdAt)
+            cursor = createCursor(nextTask, orderBy)
         }
     }
 })
